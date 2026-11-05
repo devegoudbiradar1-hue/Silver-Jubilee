@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Batch Cup</title>
+<meta name="description" content="Batch-wise fund collection for Jawahar Navodaya Vidyalaya Bagalkot.">
+<meta property="og:title" content="The Batch Cup">
+<meta property="og:description" content="See how much each batch has raised.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Hanken+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0}
+
+/* Layout: dark scoreboard hero with one long total meter, then one line meter per batch in serial order, with a rank tag on each. */
+:root{
+  --bg:#F2F5FA; --surface:#FFFFFF; --fg:#0D1830; --muted:#566280;
+  --line:#D6DDEA; --line-strong:#B4C0D6; --tick:#8FA2C4; --jar:#EAEFF8;
+  --accent:#2F6BE8; --amber:#E8A012; --green:#12A06A;
+  --amber-ink:#8F5A00; --green-ink:#0B7A4F;
+  --hero-bg:#0D1830; --hero-fg:#F3F6FF; --hero-muted:#9FB0D4;
+  --hero-track:rgba(255,255,255,.14); --hero-fill:#5C93FF; --hero-hi:#FFB938;
+  --chip-ink:#1B1200;
+  --f-display:'Big Shoulders Display','Barlow Condensed','Arial Narrow',sans-serif;
+  --f-body:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'DM Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#080F20; --surface:#101A34; --fg:#EAF0FF; --muted:#93A2C6;
+    --line:#22305A; --line-strong:#34467A; --tick:#4B5F91; --jar:#0B1428;
+    --accent:#5F92FF; --amber:#FFB63D; --green:#33CF8C;
+    --amber-ink:#FFC862; --green-ink:#5BE0A6;
+    --hero-bg:#131F40; --hero-fg:#F3F6FF; --hero-muted:#9FB0D4;
+    --hero-track:rgba(255,255,255,.12); --hero-fill:#6B9CFF; --hero-hi:#FFB938;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#080F20; --surface:#101A34; --fg:#EAF0FF; --muted:#93A2C6;
+  --line:#22305A; --line-strong:#34467A; --tick:#4B5F91; --jar:#0B1428;
+  --accent:#5F92FF; --amber:#FFB63D; --green:#33CF8C;
+  --amber-ink:#FFC862; --green-ink:#5BE0A6;
+  --hero-bg:#131F40; --hero-fg:#F3F6FF; --hero-muted:#9FB0D4;
+  --hero-track:rgba(255,255,255,.12); --hero-fill:#6B9CFF; --hero-hi:#FFB938;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:var(--f-body); font-size:16px; line-height:1.5;
+  padding-block:20px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:28px;min-width:0}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+/* Sample banner */
+.banner{border:1px dashed var(--line-strong);border-radius:10px;padding:10px 14px;font-size:14px;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.banner b{color:var(--amber-ink);font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:500}
+
+/* Hero */
+.hero{background:var(--hero-bg);color:var(--hero-fg);border-radius:20px;padding:clamp(20px,4vw,40px);display:flex;flex-direction:column;gap:22px;min-width:0}
+.hero-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--hero-hi);margin:0}
+h1{font-family:var(--f-display);font-weight:900;text-transform:uppercase;font-size:clamp(52px,13vw,112px);line-height:.88;margin:6px 0 0;letter-spacing:.01em;text-wrap:balance}
+.tag{margin:10px 0 0;color:var(--hero-muted);max-width:46ch}
+.admin-btn{background:transparent;border:1px solid rgba(255,255,255,.35);color:var(--hero-fg);border-radius:999px;padding:8px 16px;font-size:14px;font-weight:500}
+.admin-btn:hover{background:rgba(255,255,255,.1)}
+.total{display:flex;align-items:baseline;gap:12px 16px;flex-wrap:wrap}
+.big{font-family:var(--f-display);font-weight:800;font-size:clamp(46px,11vw,92px);line-height:.95;font-variant-numeric:tabular-nums}
+.of{color:var(--hero-muted);font-size:15px}
+.rail{position:relative;height:30px;border-radius:999px;background:var(--hero-track);overflow:hidden}
+.rail-fill{position:absolute;inset:0 auto 0 0;width:calc(var(--p)*1%);border-radius:999px;
+  background-color:var(--hero-fill);
+  background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.2) 0 10px,transparent 10px 20px);
+  animation:grow 1.4s cubic-bezier(.2,.8,.2,1) both, slide 3s linear infinite}
+.scale{position:relative;height:18px;margin-top:-10px;font-family:var(--f-mono);font-size:11px;color:var(--hero-muted)}
+.scale span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+.scale span:first-child{transform:none}
+.scale span:last-child{transform:translateX(-100%)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px 24px;margin:0;border-top:1px solid rgba(255,255,255,.16);padding-top:18px}
+.stats div{min-width:0}
+.stats dt{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--hero-muted)}
+.stats dd{margin:2px 0 0;font-family:var(--f-display);font-weight:800;font-size:28px;line-height:1.1;overflow-wrap:anywhere}
+
+/* Board */
+.board-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+h2{font-family:var(--f-display);font-weight:800;text-transform:uppercase;font-size:clamp(30px,6vw,44px);line-height:1;margin:0;letter-spacing:.01em}
+.sub{margin:4px 0 0;color:var(--muted);font-size:14px}
+.chips{display:flex;gap:6px}
+.chip{background:transparent;border:1px solid var(--line-strong);border-radius:999px;padding:6px 14px;font-size:14px;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.board{list-style:none;margin:20px 0 0;padding:0;display:flex;flex-direction:column;max-width:880px}
+.line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;align-items:center;padding:16px 0;border-bottom:1px solid var(--line);min-width:0}
+.line:first-child{border-top:1px solid var(--line)}
+.t-build{--liq:var(--accent)}
+.t-close{--liq:var(--amber)}
+.t-done{--liq:var(--green)}
+.t-open{--liq:var(--accent)}
+.l-name{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;min-width:0;font-weight:700;font-size:17px;line-height:1.25}
+.l-rank{font-family:var(--f-mono);font-weight:500;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line-strong);border-radius:999px;padding:2px 8px}
+.l-rank.first{background:var(--amber);border-color:var(--amber);color:var(--chip-ink)}
+.l-amt{font-family:var(--f-display);font-weight:800;font-size:32px;line-height:1;font-variant-numeric:tabular-nums;text-align:right}
+.l-bar{grid-column:1/-1;position:relative;height:18px;border-radius:999px;background:var(--jar);border:1px solid var(--line-strong);overflow:hidden}
+.l-bar::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to right,transparent 0 calc(25% - 1px),var(--tick) calc(25% - 1px) 25%)}
+.l-fill{position:absolute;inset:0 auto 0 0;width:calc(var(--p)*1%);border-radius:999px;background-color:var(--liq);background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.24) 0 8px,transparent 8px 16px);animation:grow 1.2s cubic-bezier(.2,.8,.2,1) both,slide 3s linear infinite}
+.l-fill.empty{display:none}
+.l-sub{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;gap:2px 16px;flex-wrap:wrap}
+.pct{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.gap{font-size:13px;color:var(--muted);line-height:1.35}
+.gap.done{color:var(--green-ink);font-weight:700}
+.gap.lead{color:var(--amber-ink);font-weight:700}
+
+/* Give */
+.give{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px}
+.give h2{font-size:30px}
+.howto{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--f-mono);font-size:14px;line-height:1.6;background:var(--jar);border-radius:10px;padding:12px 14px}
+.row-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{background:var(--fg);color:var(--bg);border:0;border-radius:10px;padding:10px 18px;font-weight:700;font-size:15px}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line-strong)}
+.btn[disabled]{opacity:.5;cursor:default}
+.foot{color:var(--muted);font-size:13px;font-family:var(--f-mono)}
+
+/* Organiser sheet */
+.sheet{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.sheet-in{max-width:640px;margin:0 auto;padding:22px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label,.cols span{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.field input,.field textarea,.rowin input{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--fg);background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;padding:10px 12px}
+.field textarea{min-height:92px;resize:vertical}
+.cols,.rowin{display:grid;grid-template-columns:minmax(0,1fr) 116px 116px;gap:8px}
+.railnote{margin:0;font-family:var(--f-mono);font-size:12px;color:var(--hero-muted);line-height:1.5}
+@media (max-width:560px){.cols{display:none}.rowin input:first-child{grid-column:1/-1}.rowin{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.rows{display:flex;flex-direction:column;gap:8px}
+.status{min-height:22px;font-size:14px;color:var(--amber-ink)}
+.sticky-actions{position:sticky;bottom:0;background:var(--bg);padding-block:12px;display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line)}
+
+@keyframes grow{from{width:0}}
+@keyframes slide{to{background-position:28px 0}}
+@media (prefers-reduced-motion: reduce){
+  .l-fill,.rail-fill{animation:none}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ============ EDIT YOUR FIGURES HERE ============
+   a = amount collected so far, in rupees (digits only, no commas)
+   g = target in rupees for that batch, or 0 for an open target
+   updated = the text shown as "Figures updated ..." at the bottom
+   howTo = the donation details shown under "How to give"
+   Save the file after editing, then upload it again to your host. */
+var DATA = {
+  school: "Jawahar Navodaya Vidyalaya Bagalkot",
+  tagline: "Eighteen batches, one cup. Every donation moves your batch's meter.",
+  howTo: "96901001495kagb@cnrb",
+  updated: "5 Nov 2026, 1:27 pm",
+  sample: false,
+  batches: [
+    {n:"1st Batch", a:69000, g:200000},
+    {n:"2nd Batch", a:0, g:200000},
+    {n:"3rd Batch", a:0, g:200000},
+    {n:"4th Batch", a:0, g:200000},
+    {n:"5th Batch", a:0, g:200000},
+    {n:"6th Batch", a:0, g:150000},
+    {n:"7th Batch", a:0, g:150000},
+    {n:"8th Batch", a:0, g:150000},
+    {n:"9th Batch", a:0, g:75000},
+    {n:"10th Batch", a:62500, g:75000},
+    {n:"11th Batch", a:0, g:75000},
+    {n:"12th Batch", a:0, g:75000},
+    {n:"13th Batch", a:0, g:0},
+    {n:"14th Batch", a:0, g:0},
+    {n:"15th Batch", a:0, g:0},
+    {n:"16th Batch", a:0, g:0},
+    {n:"17th Batch", a:0, g:0},
+    {n:"18th Batch", a:0, g:0}
+  ]
+};
+/* ============ END OF FIGURES ============ */
+
+</script>
+<script>
+
+(function(){
+  var S = DATA;
+  var sortMode = 'batch';
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function inr(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
+  function tier(b){ return b.g > 0 ? (b.p >= 100 ? 'done' : b.p >= 70 ? 'close' : 'build') : 'open'; }
+  function parseNum(v){ return Math.max(0, parseInt(String(v).replace(/[^\d]/g,''), 10) || 0); }
+  function fmtDate(iso){
+    try { return new Date(iso).toLocaleString('en-IN', {day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit'}); }
+    catch(e){ return ''; }
+  }
+
+  function compute(){
+    var list = S.batches.map(function(b, i){ return {i:i, n:b.n, a:b.a, g:b.g || 0}; });
+    var maxG = list.reduce(function(m, b){ return Math.max(m, b.g); }, 1);
+    list.forEach(function(b){ b.p = b.g > 0 ? b.a / b.g * 100 : b.a / maxG * 100; });
+    var ranked = list.slice().sort(function(x, y){ return (y.a - x.a) || (x.i - y.i); });
+    ranked.forEach(function(b, k){
+      b.rank = (k > 0 && b.a === ranked[k-1].a) ? ranked[k-1].rank : k + 1;
+      b.ahead = null;
+      for (var j = k - 1; j >= 0; j--) { if (ranked[j].a > b.a) { b.ahead = ranked[j]; break; } }
+    });
+    var fixed = list.filter(function(b){ return b.g > 0; });
+    return {
+      list:list, ranked:ranked, fixed:fixed,
+      total: list.reduce(function(s, b){ return s + b.a; }, 0),
+      targetSum: fixed.reduce(function(s, b){ return s + b.g; }, 0),
+      fixedRaised: fixed.reduce(function(s, b){ return s + b.a; }, 0),
+      nOpen: list.length - fixed.length
+    };
+  }
+
+  function gapLine(b, c){
+    if (b.g > 0 && b.p >= 100) return '<div class="gap done">Goal reached</div>';
+    if (b.a === 0 && b.rank === 1) return '<div class="gap">Nobody has given yet. Be the first.</div>';
+    if (b.rank === 1) {
+      var second = c.ranked.filter(function(x){ return x.a < b.a; })[0];
+      return '<div class="gap lead">Leading' + (second ? ' by ' + inr(b.a - second.a) : '') + '</div>';
+    }
+    if (b.ahead) return '<div class="gap">' + inr(b.ahead.a - b.a) + ' to catch ' + esc(b.ahead.n) + '</div>';
+    return '';
+  }
+
+  function jarHtml(b, c){
+    var p = Math.min(100, b.p);
+    var first = b.rank === 1 && b.a > 0;
+    return '<li class="line t-' + tier(b) + '">' +
+      '<div class="l-name"><span>' + esc(b.n) + '</span><b class="l-rank' + (first ? ' first' : '') + '">Rank ' + b.rank + '</b></div>' +
+      '<div class="l-amt">' + inr(b.a) + '</div>' +
+      '<div class="l-bar"><div class="l-fill' + (b.a === 0 ? ' empty' : '') + '" style="--p:' + p.toFixed(1) + '"></div></div>' +
+      '<div class="l-sub"><span class="pct">' + (b.g > 0 ? Math.round(b.p) + '% of ' + inr(b.g) : 'Open target') + '</span>' + gapLine(b, c) + '</div>' +
+    '</li>';
+  }
+
+  function boardHtml(c){
+    var items = sortMode === 'rank' ? c.ranked : c.list;
+    return items.map(function(b){ return jarHtml(b, c); }).join('');
+  }
+
+  function render(){
+    var c = compute();
+    var tp = c.targetSum > 0 ? c.fixedRaised / c.targetSum * 100 : 0;
+    var atGoal = c.fixed.filter(function(b){ return b.p >= 100; }).length;
+    var lead = c.ranked[0];
+    var togo = Math.max(0, c.targetSum - c.fixedRaised);
+    var scale = [0, 25, 50, 75, 100].map(function(t){
+      var label = t === 0 ? '₹0' : t === 100 ? inr(c.targetSum) : t + '%';
+      return '<span style="left:' + t + '%">' + label + '</span>';
+    }).join('');
+
+    document.getElementById('app').innerHTML =
+    '<div class="wrap">' +
+      (S.sample ? '<div class="banner"><b>Sample figures</b><span>' + 'These are placeholders until the organiser enters the real amounts.' + '</span></div>' : '') +
+      '<section class="hero" aria-label="Total raised">' +
+        '<div class="hero-top"><div><p class="eyebrow">' + esc(S.school) + ' · Alumni fund drive</p>' +
+        '<h1>The Batch Cup</h1><p class="tag">' + esc(S.tagline) + '</p></div>' +
+        '' + '</div>' +
+        '<div class="total"><span class="big">' + inr(c.total) + '</span><span class="of">raised in total</span></div>' +
+        '<div><div class="rail" role="img" aria-label="' + Math.round(tp) + ' percent of the target raised"><div class="rail-fill" style="--p:' + Math.min(100, tp).toFixed(1) + '"></div></div><div class="scale">' + scale + '</div></div>' +
+        '<p class="railnote">Batches with a target: ' + inr(c.fixedRaised) + ' of ' + inr(c.targetSum) + ' (' + Math.round(tp) + '%)' + (c.nOpen ? '. ' + c.nOpen + ' open-target batches count toward the total only.' : '') + '</p>' +
+        '<dl class="stats">' +
+          '<div><dt>Batches at goal</dt><dd class="num">' + atGoal + ' of ' + c.fixed.length + '</dd></div>' +
+          '<div><dt>Leading</dt><dd>' + (lead && lead.a > 0 ? esc(lead.n) : 'No one yet') + '</dd></div>' +
+          '<div><dt>Still to raise</dt><dd class="num">' + inr(togo) + '</dd></div>' +
+        '</dl>' +
+      '</section>' +
+      '<section aria-label="Funds by batch">' +
+        '<div class="board-head"><div><h2>Batch by batch</h2><p class="sub">One line per batch, filled toward its own target. Open-target batches fill against the largest target.</p></div>' +
+        '<div class="chips" role="group" aria-label="Order"><button class="chip" data-act="sort" data-mode="batch" aria-pressed="' + (sortMode==='batch') + '" type="button">By batch</button><button class="chip" data-act="sort" data-mode="rank" aria-pressed="' + (sortMode==='rank') + '" type="button">By rank</button></div></div>' +
+        '<ol class="board" id="board" style="margin-top:20px">' + boardHtml(c) + '</ol>' +
+      '</section>' +
+      '<section class="give" aria-label="How to give"><h2>How to give</h2><p class="howto" id="howto">' + esc(S.howTo) + '</p>' +
+        '<div class="row-actions"><button class="btn" data-act="copy" type="button">Copy</button></div></section>' +
+      '<p class="foot">Figures updated ' + esc(S.updated) + '</p>' +
+    '</div>';
+  }
+
+  
+  async function copyHow(btn){
+    var text = S.howTo;
+    try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied'; }
+    catch(e){
+      var r = document.createRange(); r.selectNodeContents(document.getElementById('howto'));
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      btn.textContent = 'Selected';
+    }
+    setTimeout(function(){ btn.textContent = 'Copy'; }, 1600);
+  }
+
+  document.addEventListener('click', function(ev){
+    var t = ev.target.closest('[data-act]');
+    if (!t) return;
+    var act = t.getAttribute('data-act');
+    if (act === 'sort') {
+      sortMode = t.getAttribute('data-mode');
+      var c = compute();
+      document.getElementById('board').innerHTML = boardHtml(c);
+      document.querySelectorAll('[data-act="sort"]').forEach(function(x){ x.setAttribute('aria-pressed', String(x.getAttribute('data-mode') === sortMode)); });
+    } else if (act === 'copy') copyHow(t);
+  });
+
+  render();
+
+})();
+
+</script>
+</body>
+</html>
